@@ -5,10 +5,25 @@ import { z } from 'zod';
 import { createUser, getUser } from '@/lib/db/queries';
 
 import { signIn } from './auth';
+import { VALIDATION } from '@/lib/constants';
 
 const authFormSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  email: z.string().email().max(255).transform((val) => val.toLowerCase().trim()),
+  password: z
+    .string()
+    .min(VALIDATION.minPasswordLength, {
+      message: `Password must be at least ${VALIDATION.minPasswordLength} characters`,
+    })
+    .max(128)
+    .regex(/[A-Z]/, {
+      message: 'Password must contain at least one uppercase letter',
+    })
+    .regex(/[a-z]/, {
+      message: 'Password must contain at least one lowercase letter',
+    })
+    .regex(/[0-9]/, {
+      message: 'Password must contain at least one number',
+    }),
 });
 
 export interface LoginActionState {

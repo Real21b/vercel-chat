@@ -2,6 +2,16 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { guestRegex, isDevelopmentEnvironment } from './lib/constants';
 
+function addSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set(
+    'Referrer-Policy',
+    'strict-origin-when-cross-origin',
+  );
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -14,7 +24,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname.startsWith('/api/auth')) {
-    return NextResponse.next();
+    return addSecurityHeaders(NextResponse.next());
   }
 
   const token = await getToken({
@@ -24,20 +34,24 @@ export async function middleware(request: NextRequest) {
   });
 
   if (!token) {
-    const redirectUrl = encodeURIComponent(request.url);
+    const redirectUrl = encodeURIComponent(request.nextUrl.pathname);
 
-    return NextResponse.redirect(
-      new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url),
+    return addSecurityHeaders(
+      NextResponse.redirect(
+        new URL(`/api/auth/guest?redirectUrl=${redirectUrl}`, request.url),
+      ),
     );
   }
 
   const isGuest = guestRegex.test(token?.email ?? '');
 
   if (token && !isGuest && ['/login', '/register'].includes(pathname)) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return addSecurityHeaders(
+      NextResponse.redirect(new URL('/', request.url)),
+    );
   }
 
-  return NextResponse.next();
+  return addSecurityHeaders(NextResponse.next());
 }
 
 export const config = {

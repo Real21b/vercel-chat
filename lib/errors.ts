@@ -4,6 +4,7 @@ export type ErrorType =
   | 'forbidden'
   | 'not_found'
   | 'rate_limit'
+  | 'internal_error'
   | 'offline';
 
 export type Surface =
@@ -35,10 +36,21 @@ export const visibilityBySurface: Record<Surface, ErrorVisibility> = {
   activate_gateway: 'response',
 };
 
+function generateRequestId(): string {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
+    return crypto.randomUUID();
+  }
+  return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export class ChatSDKError extends Error {
   public type: ErrorType;
   public surface: Surface;
   public statusCode: number;
+  public requestId: string;
 
   constructor(errorCode: ErrorCode, cause?: string) {
     super();
@@ -50,28 +62,38 @@ export class ChatSDKError extends Error {
     this.surface = surface as Surface;
     this.message = getMessageByErrorCode(errorCode);
     this.statusCode = getStatusCodeByType(this.type);
+    this.requestId = generateRequestId();
   }
 
   public toResponse() {
     const code: ErrorCode = `${this.type}:${this.surface}`;
     const visibility = visibilityBySurface[this.surface];
 
-    const { message, cause, statusCode } = this;
+    const { message, cause, statusCode, requestId } = this;
 
     if (visibility === 'log') {
       console.error({
         code,
         message,
         cause,
+        requestId,
+        timestamp: new Date().toISOString(),
       });
 
       return Response.json(
-        { code: '', message: 'Something went wrong. Please try again later.' },
+        {
+          code: '',
+          message: 'Something went wrong. Please try again later.',
+          requestId,
+        },
         { status: statusCode },
       );
     }
 
-    return Response.json({ code, message, cause }, { status: statusCode });
+    return Response.json(
+      { code, message, cause, requestId },
+      { status: statusCode },
+    );
   }
 }
 
@@ -129,6 +151,8 @@ function getStatusCodeByType(type: ErrorType) {
       return 404;
     case 'rate_limit':
       return 429;
+    case 'internal_error':
+      return 500;
     case 'offline':
       return 503;
     default:

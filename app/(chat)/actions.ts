@@ -9,6 +9,7 @@ import {
 } from '@/lib/db/queries';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { myProvider } from '@/lib/ai/providers';
+import { ChatSDKError } from '@/lib/errors';
 
 export async function saveChatModelAsCookie(model: string) {
   const cookieStore = await cookies();
@@ -35,6 +36,13 @@ export async function generateTitleFromUserMessage({
 
 export async function deleteTrailingMessages({ id }: { id: string }) {
   const [message] = await getMessageById({ id });
+
+  if (!message) {
+    throw new ChatSDKError(
+      'not_found:chat',
+      `Message with id ${id} not found`,
+    );
+  }
 
   await deleteMessagesByChatIdAfterTimestamp({
     chatId: message.chatId,

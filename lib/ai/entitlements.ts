@@ -1,5 +1,6 @@
 import type { UserType } from '@/app/(auth)/auth';
 import type { ChatModel } from './models';
+import { RATE_LIMITS } from '@/lib/constants';
 
 interface Entitlements {
   maxMessagesPerDay: number;
@@ -11,7 +12,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    * For users without an account
    */
   guest: {
-    maxMessagesPerDay: 20,
+    maxMessagesPerDay: RATE_LIMITS.guestMaxMessagesPerDay,
     availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
   },
 
@@ -19,7 +20,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    * For users with an account
    */
   regular: {
-    maxMessagesPerDay: 100,
+    maxMessagesPerDay: RATE_LIMITS.regularMaxMessagesPerDay,
     availableChatModelIds: ['chat-model', 'chat-model-reasoning'],
   },
 

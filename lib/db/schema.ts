@@ -10,29 +10,43 @@ import {
   primaryKey,
   foreignKey,
   boolean,
+  index,
 } from 'drizzle-orm/pg-core';
 import type { AppUsage } from '../usage';
 
-export const user = pgTable('User', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  email: varchar('email', { length: 64 }).notNull(),
-  password: varchar('password', { length: 64 }),
-});
+export const user = pgTable(
+  'User',
+  {
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    email: varchar('email', { length: 255 }).notNull(),
+    password: varchar('password', { length: 255 }),
+  },
+  (table) => ({
+    emailIdx: index('idx_user_email').on(table.email),
+  }),
+);
 
 export type User = InferSelectModel<typeof user>;
 
-export const chat = pgTable('Chat', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  createdAt: timestamp('createdAt').notNull(),
-  title: text('title').notNull(),
-  userId: uuid('userId')
-    .notNull()
-    .references(() => user.id),
-  visibility: varchar('visibility', { enum: ['public', 'private'] })
-    .notNull()
-    .default('private'),
-  lastContext: jsonb('lastContext').$type<AppUsage | null>(),
-});
+export const chat = pgTable(
+  'Chat',
+  {
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    createdAt: timestamp('createdAt').notNull(),
+    title: text('title').notNull(),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => user.id),
+    visibility: varchar('visibility', { enum: ['public', 'private'] })
+      .notNull()
+      .default('private'),
+    lastContext: jsonb('lastContext').$type<AppUsage | null>(),
+  },
+  (table) => ({
+    userIdIdx: index('idx_chat_userId').on(table.userId),
+    createdAtIdx: index('idx_chat_createdAt').on(table.createdAt),
+  }),
+);
 
 export type Chat = InferSelectModel<typeof chat>;
 
@@ -50,16 +64,23 @@ export const messageDeprecated = pgTable('Message', {
 
 export type MessageDeprecated = InferSelectModel<typeof messageDeprecated>;
 
-export const message = pgTable('Message_v2', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  chatId: uuid('chatId')
-    .notNull()
-    .references(() => chat.id),
-  role: varchar('role').notNull(),
-  parts: json('parts').notNull(),
-  attachments: json('attachments').notNull(),
-  createdAt: timestamp('createdAt').notNull(),
-});
+export const message = pgTable(
+  'Message_v2',
+  {
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    chatId: uuid('chatId')
+      .notNull()
+      .references(() => chat.id),
+    role: varchar('role').notNull(),
+    parts: json('parts').notNull(),
+    attachments: json('attachments').notNull(),
+    createdAt: timestamp('createdAt').notNull(),
+  },
+  (table) => ({
+    chatIdIdx: index('idx_message_chatId').on(table.chatId),
+    createdAtIdx: index('idx_message_createdAt').on(table.createdAt),
+  }),
+);
 
 export type DBMessage = InferSelectModel<typeof message>;
 

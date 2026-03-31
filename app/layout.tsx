@@ -5,11 +5,52 @@ import { ThemeProvider } from '@/components/theme-provider';
 
 import './globals.css';
 import { SessionProvider } from 'next-auth/react';
+import { APP_CONFIG } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://chat.vercel.ai'),
-  title: 'Next.js Chatbot Template',
-  description: 'Next.js chatbot template using the AI SDK.',
+  metadataBase: new URL(APP_CONFIG.url),
+  title: {
+    default: APP_CONFIG.name,
+    template: `%s | ${APP_CONFIG.name}`,
+  },
+  description: APP_CONFIG.description,
+  keywords: [
+    'AI',
+    'chatbot',
+    'Next.js',
+    'Vercel',
+    'AI SDK',
+    'streaming',
+    'chat',
+    'assistant',
+  ],
+  authors: [{ name: 'Vercel' }],
+  creator: 'Vercel',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: APP_CONFIG.url,
+    title: APP_CONFIG.name,
+    description: APP_CONFIG.description,
+    siteName: APP_CONFIG.name,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: APP_CONFIG.name,
+    description: APP_CONFIG.description,
+    creator: '@vercel',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 };
 
 export const viewport = {

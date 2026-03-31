@@ -40,7 +40,16 @@ export const {
   providers: [
     Credentials({
       credentials: {},
-      async authorize({ email, password }: any) {
+      async authorize(credentials) {
+        const { email, password } = credentials as {
+          email: string;
+          password: string;
+        };
+
+        if (!email || !password) {
+          return null;
+        }
+
         const users = await getUser(email);
 
         if (users.length === 0) {
@@ -74,7 +83,10 @@ export const {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id as string;
+        if (!user.id) {
+          throw new Error('User ID is required for JWT token');
+        }
+        token.id = user.id;
         token.type = user.type;
       }
 
